@@ -278,270 +278,12 @@ class SimpleJobSearch:
         if source == 'Apna.co':
             # Use Apna's job search with specific parameters
             return f"https://apna.co/jobs?search={job_title.replace(' ', '%20')}&company={company.replace(' ', '%20')}"
-        elif source == 'TimesJobs':
-            # Use TimesJobs search with specific parameters  
-            return f"https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&txtKeywords={job_title.replace(' ', '%20')}&txtLocation=India"
+        
         else:
             # Generic job search
             return f"https://www.google.com/search?q={job_title.replace(' ', '+')}+jobs+at+{company.replace(' ', '+')}"
     
-    def search_timesjobs(self, job_title: str, location: str = "India") -> List[Dict]:
-        """Search jobs on TimesJobs.com with real scraping"""
-        jobs = []
-        
-        try:
-            print(f"🔍 Searching TimesJobs for: {job_title}")
-            
-            # TimesJobs search URL
-            search_url = "https://www.timesjobs.com/candidate/job-search.html"
-            params = {
-                'searchType': 'personalizedSearch',
-                'from': 'submit',
-                'txtKeywords': job_title,
-                'txtLocation': location if location != "India" else ""
-            }
-            
-            # Build URL
-            param_string = "&".join([f"{k}={v.replace(' ', '%20')}" for k, v in params.items() if v])
-            full_url = f"{search_url}?{param_string}"
-            
-            print(f"   URL: {full_url}")
-            
-            # Enhanced headers to avoid blocking
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Referer': 'https://www.timesjobs.com/',
-                'Upgrade-Insecure-Requests': '1',
-                'Cache-Control': 'no-cache'
-            }
-            
-            # Use session for better success
-            session = requests.Session()
-            session.headers.update(headers)
-            
-            # First visit homepage
-            session.get("https://www.timesjobs.com/", timeout=10)
-            time.sleep(2)
-            
-            # Then search
-            response = session.get(full_url, timeout=15)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                
-                # Debug
-                page_title = soup.find('title')
-                print(f"   Page loaded: {page_title.get_text() if page_title else 'Unknown'}")
-                
-                # Find job cards on TimesJobs
-                job_cards = self.find_timesjobs_job_cards(soup)
-                
-                print(f"   Found {len(job_cards)} job cards")
-                
-                for i, card in enumerate(job_cards[:8]):  # Limit to 8 jobs
-                    job_data = self.parse_timesjobs_job_card(card)
-                    if job_data:
-                        jobs.append(job_data)
-                        print(f"   ✓ Parsed job {i+1}: {job_data['title']} at {job_data['company']}")
-            
-            else:
-                print(f"   HTTP {response.status_code}")
-            
-                        # Add delay to be respectful
-            time.sleep(2)
-
-            if not jobs:
-                print("⚠️ TimesJobs returned no verified jobs")
-
-            print(f"✅ Found {len(jobs)} jobs from TimesJobs")
-
-        except Exception as e:
-            print(f"⚠️ TimesJobs search failed: {e}")
-
-        return jobs
-    
-    def find_timesjobs_job_cards(self, soup):
-        """Find job cards on TimesJobs using updated selectors"""
-        job_cards = []
-        
-        # Updated TimesJobs selectors based on current website structure
-        selectors_to_try = [
-            '.srp-container .joblist',
-            '.job-bx.wht-shd-bx',
-            '.joblist-comp.clearfix',
-            'li.clearfix.job-bx',
-            '.job-bx',
-            '.clearfix.job-bx.wht-shd-bx',
-            'article.jobTuple'
-        ]
-        
-        for selector in selectors_to_try:
-            cards = soup.select(selector)
-            if cards:
-                print(f"   Using selector: {selector} ({len(cards)} found)")
-                job_cards = cards
-                break
-        
-        # If no specific cards found, try broader search
-        if not job_cards:
-            job_cards = soup.find_all(['li', 'div'], class_=lambda x: x and 'job' in x.lower())
-            print(f"   Fallback search found {len(job_cards)} potential job elements")
-        
-        return job_cards
-    
-    def parse_timesjobs_job_card(self, card):
-        """Parse individual TimesJobs job card with proper URL extraction"""
-        try:
-            job_data = {
-                'title': '',
-                'company': '',
-                'location': '',
-                'experience': '',
-                'salary': 'Not disclosed',
-                'description': '',
-                'apply_url': '#',
-                'source': 'TimesJobs'
-            }
-            
-            # Extract job title and link - TimesJobs specific structure
-            title_selectors = [
-                'h2 a[title]',
-                '.jobTitle a',
-                'h3.jobTitle a',
-                'a.job-title',
-                '.position a',
-                'h2 a'
-            ]
-            
-            for selector in title_selectors:
-                title_elem = card.select_one(selector)
-                if title_elem:
-                    job_data['title'] = title_elem.get_text(strip=True)
-                    href = title_elem.get('href')
-                    if href:
-                        # TimesJobs URLs are usually relative
-                        if href.startswith('/'):
-                            job_data['apply_url'] = f"https://www.timesjobs.com{href}"
-                        elif href.startswith('http'):
-                            job_data['apply_url'] = href
-                        else:
-                            job_data['apply_url'] = f"https://www.timesjobs.com/{href}"
-                    break
-            
-            # Extract company name
-            company_selectors = [
-                '.comp-name a',
-                '.company-name',
-                '.companyName',
-                'h3.joblist-comp-name',
-                '.job-advertiser'
-            ]
-            
-            for selector in company_selectors:
-                company_elem = card.select_one(selector)
-                if company_elem:
-                    job_data['company'] = company_elem.get_text(strip=True)
-                    break
-            
-            # Extract location
-            location_selectors = [
-                '.location .locationsContainer',
-                '.job-location',
-                '.locationsContainer',
-                '.loc'
-            ]
-            
-            for selector in location_selectors:
-                location_elem = card.select_one(selector)
-                if location_elem:
-                    job_data['location'] = location_elem.get_text(strip=True)
-                    break
-            
-            # Extract experience
-            exp_selectors = [
-                '.experience .expwdth',
-                '.exp',
-                '.job-experience'
-            ]
-            
-            for selector in exp_selectors:
-                exp_elem = card.select_one(selector)
-                if exp_elem:
-                    job_data['experience'] = exp_elem.get_text(strip=True)
-                    break
-            
-            # Extract salary
-            salary_selectors = [
-                '.salary .sal',
-                '.package',
-                '.ctc'
-            ]
-            
-            for selector in salary_selectors:
-                salary_elem = card.select_one(selector)
-                if salary_elem:
-                    job_data['salary'] = salary_elem.get_text(strip=True)
-                    break
-            
-            # Extract job description/snippet
-            desc_selectors = [
-                '.job-description',
-                '.list-job-dtl',
-                '.more-info'
-            ]
-            
-            for selector in desc_selectors:
-                desc_elem = card.select_one(selector)
-                if desc_elem:
-                    job_data['description'] = desc_elem.get_text(strip=True)[:200] + "..."
-                    break
-            
-            # Only return if we have essential data
-            if job_data['title'] and job_data['company']:
-                # Set defaults
-                if not job_data['location']:
-                    job_data['location'] = 'India'
-                if not job_data['experience']:
-                    job_data['experience'] = 'As per requirement'
-                
-                # Ensure we have a working apply URL
-                if job_data['apply_url'] == '#':
-                    job_data['apply_url'] = self.get_fallback_job_url(job_data['title'], job_data['company'], 'TimesJobs')
-                
-                return job_data
-            
-            return None
-            
-        except Exception as e:
-            print(f"   Error parsing TimesJobs job card: {e}")
-            return None
-    
-    def get_sample_timesjobs(self, job_title: str, location: str) -> List[Dict]:
-        """Sample TimesJobs"""
-        companies = ["Accenture", "Capgemini", "IBM", "Deloitte", "EY", "KPMG"]
-        locations = ["Gurgaon", "Noida", "Bangalore", "Hyderabad", "Chennai", "Mumbai"]
-        
-        jobs = []
-        for i in range(4):
-            company = companies[i % len(companies)]
-            title = f"{job_title}" if i == 0 else f"Senior {job_title}"
-            
-            jobs.append({
-                'title': title,
-                'company': company,
-                'location': locations[i % len(locations)],
-                'experience': f"{2 + i}-{5 + i} years",
-                'salary': f"₹{4 + i * 3}-{8 + i * 4} Lakh PA",
-                'description': f"Great {job_title} opportunity at {company}.",
-                'apply_url': self.get_fallback_job_url(title, company, 'TimesJobs'),
-                'source': 'TimesJobs'
-            })
-        
-        return jobs
+   
     
     def parse_indeed_job_card(self, card):
         """Parse individual Indeed job card"""
@@ -738,9 +480,8 @@ class SimpleJobSearch:
             
         except Exception as e:
             print(f"⚠️ LinkedIn search failed: {e}")
-            # Add sample jobs as fallback
-            jobs = self.get_sample_linkedin_jobs(job_title)
-        
+            return []
+
         return jobs
     
     def parse_linkedin_job(self, card) -> Dict:
@@ -853,46 +594,22 @@ class SimpleJobSearch:
             job['source'] = 'Naukri'
         
         return job_data
-    
-    def get_sample_linkedin_jobs(self, job_title: str) -> List[Dict]:
-        """Sample LinkedIn jobs when scraping fails"""
-        companies = ["Microsoft", "Google", "Amazon", "Meta", "Apple"]
-        locations = ["Remote", "San Francisco", "Seattle", "New York", "Austin"]
-        
-        return [{
-            'title': f"Senior {job_title}",
-            'company': companies[i % len(companies)],
-            'location': locations[i % len(locations)],
-            'experience': f"{3 + i}+ years",
-            'salary': f"${80 + i * 20}k - ${120 + i * 20}k",
-            'description': f"Exciting opportunity for {job_title} at {companies[i % len(companies)]} with competitive benefits.",
-            'apply_url': f"https://www.linkedin.com/jobs/view/{1000000 + i}",
-            'source': 'LinkedIn'
-        } for i in range(5)]  
-  
+      
     def search_jobs(self, job_title: str, location: str = "India") -> List[Dict]:
-        """Search jobs from both platforms"""
-        all_jobs = []
-        
+        """Search recent jobs from LinkedIn."""
+
         print(f"\n🚀 Starting job search for: {job_title}")
         print("=" * 50)
-        
-        # Search TimesJobs first
-        timesjobs = self.search_timesjobs(job_title, location)
-        all_jobs.extend(timesjobs)
-        
-        # Wait between searches
-        time.sleep(2)
-        
+
         # Search LinkedIn
         linkedin_jobs = self.search_linkedin(job_title, location)
-        all_jobs.extend(linkedin_jobs)
+
         # Filter out jobs older than 30 days
         cutoff_date = datetime.now().date() - timedelta(days=30)
 
         filtered_jobs = []
 
-        for job in all_jobs:
+        for job in linkedin_jobs:
             posted_date = job.get('posted_date')
 
             if not posted_date:
@@ -901,46 +618,25 @@ class SimpleJobSearch:
                 continue
 
             try:
-                job_date = datetime.strptime(posted_date, '%Y-%m-%d').date()
+                job_date = datetime.strptime(
+                    posted_date, '%Y-%m-%d'
+                ).date()
 
                 if job_date >= cutoff_date:
                     filtered_jobs.append(job)
+
             except ValueError:
                 # Keep jobs if the date format cannot be parsed
                 filtered_jobs.append(job)
 
-        all_jobs = filtered_jobs
-        # Ensure we have jobs from both sources
-        linkedin_count = sum(1 for job in all_jobs if 'linkedin' in job['source'].lower())
-        timesjobs_count = sum(1 for job in all_jobs if 'timesjobs' in job['source'].lower())
-        
-        
-        
-        # Remove duplicates
-        unique_jobs = self.remove_duplicates(all_jobs)
-        
-        # Recount after deduplication
-        linkedin_count = sum(1 for job in unique_jobs if 'linkedin' in job['source'].lower())
-        timesjobs_count = sum(1 for job in unique_jobs if 'timesjobs' in job['source'].lower())
-        
-        # Sort jobs to mix sources (alternate between LinkedIn and TimesJobs)
-        linkedin_jobs = [job for job in unique_jobs if 'linkedin' in job['source'].lower()]
-        timesjobs_jobs = [job for job in unique_jobs if 'timesjobs' in job['source'].lower()]
-        
-        mixed_jobs = []
-        max_len = max(len(linkedin_jobs), len(timesjobs_jobs))
-        
-        for i in range(max_len):
-            if i < len(timesjobs_jobs):
-                mixed_jobs.append(timesjobs_jobs[i])
-            if i < len(linkedin_jobs):
-                mixed_jobs.append(linkedin_jobs[i])
-        
-        print(f"\n✅ Total jobs found: {len(mixed_jobs)}")
-        print(f"   💼 LinkedIn: {linkedin_count} jobs")
-        print(f"   📰 TimesJobs: {timesjobs_count} jobs")
-        return mixed_jobs
-    
+        # Remove duplicate LinkedIn listings
+        unique_jobs = self.remove_duplicates(filtered_jobs)
+
+        print(f"\n✅ Total jobs found: {len(unique_jobs)}")
+        print(f"   💼 LinkedIn: {len(unique_jobs)} jobs")
+
+        return unique_jobs
+
     def remove_duplicates(self, jobs: List[Dict]) -> List[Dict]:
         """Remove duplicate jobs based on title and company"""
         seen = set()
@@ -980,8 +676,6 @@ class SimpleJobSearch:
             # Get source icon
             if "linkedin" in job['source'].lower():
                 source_icon = "💼"
-            elif "timesjobs" in job['source'].lower():
-                source_icon = "📰"
             else:
                 source_icon = "🔍"
             
