@@ -351,20 +351,17 @@ class SimpleJobSearch:
             else:
                 print(f"   HTTP {response.status_code}")
             
-            # Add delay to be respectful
+                        # Add delay to be respectful
             time.sleep(2)
-            
-            # Fallback to sample data if needed
+
             if not jobs:
-                print("⚠️ TimesJobs scraping failed, adding sample TimesJobs")
-                jobs = self.get_sample_timesjobs(job_title, location)
-            
+                print("⚠️ TimesJobs returned no verified jobs")
+
             print(f"✅ Found {len(jobs)} jobs from TimesJobs")
-            
+
         except Exception as e:
             print(f"⚠️ TimesJobs search failed: {e}")
-            jobs = self.get_sample_timesjobs(job_title, location)
-        
+
         return jobs
     
     def find_timesjobs_job_cards(self, soup):
@@ -889,11 +886,7 @@ class SimpleJobSearch:
         linkedin_count = sum(1 for job in all_jobs if 'linkedin' in job['source'].lower())
         timesjobs_count = sum(1 for job in all_jobs if 'timesjobs' in job['source'].lower())
         
-        # If no TimesJobs found, add some sample ones
-        if timesjobs_count == 0:
-            print("⚠️ Adding TimesJobs from database")
-            sample_timesjobs = self.get_sample_timesjobs(job_title, location)[:4]
-            all_jobs.extend(sample_timesjobs)
+        
         
         # Remove duplicates
         unique_jobs = self.remove_duplicates(all_jobs)
