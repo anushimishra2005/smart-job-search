@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Job Search</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 30px; 
+            text-align: center; 
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { opacity: 0.8; }
+        .search-form { 
+            padding: 40px; 
+            background: #f8f9fa;
+        }
+        .form-group { 
+            margin-bottom: 25px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            color: #2c3e50;
+        }
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            border: 2px solid #e9ecef; 
+            border-radius: 8px; 
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus { 
+            outline: none; 
+            border-color: #667eea; 
+        }
+        .search-btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            font-weight: 600;
+            cursor: pointer; 
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .search-btn:hover { 
+            transform: translateY(-2px); 
+        }
+        .search-btn:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+        }
+        .results { 
+            padding: 0 40px 40px; 
+            display: none; 
+        }
+        .job-card { 
+            background: white; 
+            border: 1px solid #e9ecef; 
+            border-radius: 10px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .job-card:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1); 
+        }
+        .job-title { 
+            font-size: 1.4em; 
+            font-weight: 600; 
+            color: #2c3e50; 
+            margin-bottom: 10px; 
+        }
+        .job-company { 
+            color: #667eea; 
+            font-weight: 500; 
+            margin-bottom: 15px; 
+        }
+        .job-details { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 10px; 
+            margin-bottom: 15px; 
+        }
+        .job-detail { 
+            display: flex; 
+            align-items: center; 
+            color: #6c757d; 
+        }
+        .job-detail span { 
+            margin-right: 8px; 
+        }
+        .apply-btn { 
+            background: #28a745; 
+            color: white; 
+            padding: 10px 20px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            display: inline-block; 
+            transition: background 0.2s;
+        }
+        .apply-btn:hover { 
+            background: #218838; 
+        }
+        .loading { 
+            text-align: center; 
+            padding: 40px; 
+            color: #6c757d; 
+        }
+        .spinner { 
+            border: 3px solid #f3f3f3; 
+            border-top: 3px solid #667eea; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+            margin: 0 auto 20px; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .no-results { 
+            text-align: center; 
+            padding: 40px; 
+            color: #6c757d; 
+        }
+        .source-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+        }
+        .source-badge.linkedin {
+            background: linear-gradient(135deg, #0077b5, #005885);
+        }
+
+        .source-badge.timesjobs {
+            background: linear-gradient(135deg, #ff6900, #cc5500);
+        }
+        .source-badge.linkedin.sample {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Job Search</h1>
+            <p>Find jobs from LinkedIn and TimesJobs</p>
+        </div>
+        
+        <div class="search-form">
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="jobTitle">Job Title</label>
+                    <input type="text" id="jobTitle" placeholder="e.g., Python Developer, Software Engineer" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" placeholder="e.g., Bangalore, Mumbai, Remote" value="India">
+                </div>
+                
+                <button type="submit" class="search-btn" id="searchBtn">
+                    🚀 Search Jobs
+                </button>
+            </form>
+        </div>
+        
+        <div id="results" class="results">
+            <div id="jobsList"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const jobTitle = document.getElementById('jobTitle').value.trim();
+            const location = document.getElementById('location').value.trim();
+            
+            if (!jobTitle) {
+                alert('Please enter a job title');
+                return;
+            }
+            
+            // Show loading
+            showLoading();
+            
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        job_title: jobTitle,
+                        location: location
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayJobs(data.jobs);
+                } else {
+                    showError(data.error || 'Search failed');
+                }
+                
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        });
+        
+        function showLoading() {
+            const results = document.getElementById('results');
+            const jobsList = document.getElementById('jobsList');
+            
+            results.style.display = 'block';
+            jobsList.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Searching for jobs...</p>
+                </div>
+            `;
+            
+            // Disable search button
+            const searchBtn = document.getElementById('searchBtn');
+            searchBtn.disabled = true;
+            searchBtn.textContent = '🔍 Searching...';
+        }
+        
+        function displayJobs(jobs) {
+            const jobsList = document.getElementById('jobsList');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            // Re-enable search button
+            searchBtn.disabled = false;
+            searchBtn.textContent = '🚀 Search Jobs';
+            
+            if (jobs.length === 0) {
+                jobsList.innerHTML = `
+                    <div class="no-results">
+                        <h3>No jobs found</h3>
+                        <p>Try different keywords or location</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `<h2>Found ${jobs.length} Jobs</h2>`;
+            
+            jobs.forEach((job, index) => {
+                html += `
+                    <div class="job-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="job-title">${job.title}</div>
+                            <div class="source-badge ${job.source.toLowerCase()}">${getSourceIcon(job.source)} ${job.source}</div>
+                        </div>
+                        <div class="job-company">🏢 ${job.company}</div>
+                        
+                        <div class="job-details">
+                            <div class="job-detail">
+                                <span>📍</span> ${job.location}
+                            </div>
+                            <div class="job-detail">
+                                <span>💼</span> ${job.experience}
+                            </div>
+                            <div class="job-detail">
+                                <span>💰</span> ${job.salary}
+                            </div>
+                        </div>
+                        
+                        ${job.description ? `<div class="job-description" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #6c757d;">${job.description}</div>` : ''}
+                        
+                        <a href="${job.apply_url}" target="_blank" class="apply-btn">
+                            Apply Now →
+                        </a>
+                    </div>
+                `;
+            });
+            
+            jobsList.innerHTML = html;
+        }
+        
+        function getSourceIcon(source) {
+            if (source.toLowerCase().includes('linkedin')) {
+                return '💼';
+            } else if (source.toLowerCase().includes('timesjobs')) {
+                return '📰';
+            }
+            return '🔍';
+        }
+        
+        function showError(message) {
+            const jobsList = document.getElementById('jobsList');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            // Re-enable search button
+            searchBtn.disabled = false;
+            searchBtn.textContent = '🚀 Search Jobs';
+            
+            jobsList.innerHTML = `
+                <div class="no-results">
+                    <h3>❌ Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
