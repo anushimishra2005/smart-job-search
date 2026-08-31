@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict
 from urllib.parse import urlencode
 
@@ -752,7 +752,7 @@ class SimpleJobSearch:
             # Get posting date
             date_elem = card.select_one('time.job-search-card__listdate')
             posted_date = date_elem.get('datetime') if date_elem else None
-            print(f"   📅 Posted date: {posted_date}")
+            
             posted_text = date_elem.get_text(strip=True) if date_elem else 'Date not available'
             # Get job link
             link_elem = card.find('a')
@@ -887,7 +887,29 @@ class SimpleJobSearch:
         # Search LinkedIn
         linkedin_jobs = self.search_linkedin(job_title, location)
         all_jobs.extend(linkedin_jobs)
-        
+        # Filter out jobs older than 30 days
+        cutoff_date = datetime.now().date() - timedelta(days=30)
+
+        filtered_jobs = []
+
+        for job in all_jobs:
+            posted_date = job.get('posted_date')
+
+            if not posted_date:
+                # Keep jobs without a posting date for now
+                filtered_jobs.append(job)
+                continue
+
+            try:
+                job_date = datetime.strptime(posted_date, '%Y-%m-%d').date()
+
+                if job_date >= cutoff_date:
+                    filtered_jobs.append(job)
+            except ValueError:
+                # Keep jobs if the date format cannot be parsed
+                filtered_jobs.append(job)
+
+        all_jobs = filtered_jobs
         # Ensure we have jobs from both sources
         linkedin_count = sum(1 for job in all_jobs if 'linkedin' in job['source'].lower())
         timesjobs_count = sum(1 for job in all_jobs if 'timesjobs' in job['source'].lower())
