@@ -749,7 +749,11 @@ class SimpleJobSearch:
             title = self.get_text(card, ['h3', '.result-card__title', '.job-title'])
             company = self.get_text(card, ['h4', '.result-card__subtitle', '.company-name'])
             location = self.get_text(card, ['.job-search-card__location', '.result-card__location'])
-            
+            # Get posting date
+            date_elem = card.select_one('time.job-search-card__listdate')
+            posted_date = date_elem.get('datetime') if date_elem else None
+            print(f"   📅 Posted date: {posted_date}")
+            posted_text = date_elem.get_text(strip=True) if date_elem else 'Date not available'
             # Get job link
             link_elem = card.find('a')
             job_link = link_elem['href'] if link_elem and link_elem.get('href') else "#"
@@ -762,6 +766,8 @@ class SimpleJobSearch:
                 'location': location or 'Remote',
                 'experience': 'Not specified',
                 'salary': 'Not disclosed',
+                'posted_date': posted_date,
+                'posted_text': posted_text,
                 'apply_url': job_link,
                 'source': 'LinkedIn'
             }
