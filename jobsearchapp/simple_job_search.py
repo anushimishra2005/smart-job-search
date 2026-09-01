@@ -11,6 +11,7 @@ import csv
 from datetime import datetime, timedelta
 from typing import List, Dict
 from urllib.parse import urlencode
+from database import create_jobs_table, save_jobs
 
 class SimpleJobSearch:
     def __init__(self):
@@ -629,9 +630,13 @@ class SimpleJobSearch:
                 # Keep jobs if the date format cannot be parsed
                 filtered_jobs.append(job)
 
-        # Remove duplicate LinkedIn listings
+                # Remove duplicate LinkedIn listings
         unique_jobs = self.remove_duplicates(filtered_jobs)
 
+        # Save jobs to SQLite
+        save_jobs(unique_jobs)
+
+        print(f"\n💾 Saved {len(unique_jobs)} jobs to database")
         print(f"\n✅ Total jobs found: {len(unique_jobs)}")
         print(f"   💼 LinkedIn: {len(unique_jobs)} jobs")
 
@@ -690,6 +695,7 @@ class SimpleJobSearch:
 
 def main():
     """Main function to run job search"""
+    create_jobs_table()
     print("🤖 Simple Job Search Tool")
     print("=" * 30)
     
