@@ -13,32 +13,54 @@ def get_connection():
 
 
 def create_jobs_table():
-    """Create the jobs table if it does not already exist."""
+    """Create the jobs table and upgrade an existing database if needed."""
     connection = get_connection()
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            company TEXT NOT NULL,
+            title TEXT,
+            company TEXT,
             location TEXT,
             experience TEXT,
             salary TEXT,
             description TEXT,
+            skills TEXT,
+            employment_type TEXT,
             posted_date TEXT,
             posted_text TEXT,
-            apply_url TEXT NOT NULL,
-            source TEXT NOT NULL,
-            scraped_at TEXT NOT NULL
+            apply_url TEXT UNIQUE,
+            source TEXT,
+            scraped_at TEXT
         )
     """)
+
+    # Upgrade an existing jobs.db safely.
+    existing_columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(jobs)").fetchall()
+    }
+
+    required_columns = {
+        "skills": "TEXT",
+        "employment_type": "TEXT",
+        "posted_text": "TEXT",
+        "scraped_at": "TEXT"
+    }
+
+    for column, data_type in required_columns.items():
+        if column not in existing_columns:
+            connection.execute(
+                f"ALTER TABLE jobs ADD COLUMN {column} {data_type}"
+            )
+            print(f"➕ Added database column: {column}")
 
     connection.commit()
     connection.close()
 
 
 def save_jobs(jobs):
-    """Save jobs to the database while avoiding duplicate listings."""
+    """Save jobs while avoiding duplicate application URLs."""
     connection = get_connection()
 
     for job in jobs:
@@ -50,13 +72,15 @@ def save_jobs(jobs):
                 experience,
                 salary,
                 description,
+                skills,
+                employment_type,
                 posted_date,
                 posted_text,
                 apply_url,
                 source,
                 scraped_at
             )
-            SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM jobs
@@ -69,6 +93,8 @@ def save_jobs(jobs):
             job.get("experience", ""),
             job.get("salary", ""),
             job.get("description", ""),
+            job.get("skills"),
+            job.get("employment_type"),
             job.get("posted_date"),
             job.get("posted_text"),
             job.get("apply_url", ""),

@@ -449,42 +449,176 @@ class SimpleJobSearch:
     
 
     
-    def search_linkedin(self, job_title: str, location: str = "India") -> List[Dict]:
-        """Search jobs on LinkedIn"""
+    def search_linkedin(
+        self,
+        job_title: str,
+        location: str = "India"
+    ) -> List[Dict]:
+        """Search jobs on LinkedIn and filter results by location."""
+
         jobs = []
+
         try:
+
             params = {
                 'keywords': job_title,
                 'location': location,
                 'redirect': 'false',
                 'position': '1'
             }
-            url = f"https://www.linkedin.com/jobs/search?{urlencode(params)}"
-            
-            print(f"🔍 Searching LinkedIn for: {job_title}")
-            response = requests.get(url, headers=self.headers, timeout=10)
-            
+
+            url = (
+                f"https://www.linkedin.com/jobs/search?"
+                f"{urlencode(params)}"
+            )
+
+            print(
+                f"🔍 Searching LinkedIn for: "
+                f"{job_title} in {location}"
+            )
+
+            response = requests.get(
+                url,
+                headers=self.headers,
+                timeout=10
+            )
+
             if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                
-                # Try multiple selectors
-                job_cards = (soup.find_all('div', class_='job-search-card') or
-                           soup.find_all('li', class_='result-card') or
-                           soup.find_all('div', {'data-entity-urn': True}))
-                
-                for card in job_cards[:10]:  # Limit to 10 jobs
+
+                soup = BeautifulSoup(
+                    response.content,
+                    'html.parser'
+                )
+
+                job_cards = (
+                    soup.find_all(
+                        'div',
+                        class_='job-search-card'
+                    )
+                    or soup.find_all(
+                        'li',
+                        class_='result-card'
+                    )
+                    or soup.find_all(
+                        'div',
+                        {'data-entity-urn': True}
+                    )
+                )
+
+                print(
+                    f"🔎 LinkedIn returned "
+                    f"{len(job_cards)} job cards"
+                )
+
+                for card in job_cards[:10]:
+
                     job = self.parse_linkedin_job(card)
-                    if job:
+
+                    if not job:
+                        continue
+
+                    job_location = job.get(
+                        'location',
+                        ''
+                    )
+
+                    if self.location_matches(
+                        location,
+                        job_location
+                    ):
+
                         jobs.append(job)
-            
-            print(f"✅ Found {len(jobs)} jobs from LinkedIn")
-            
+
+                        print(
+                            f"   ✓ {job['title']} — "
+                            f"{job['company']} | "
+                            f"{job_location}"
+                        )
+
+                    else:
+
+                        print(
+                            f"   ✗ Skipped: "
+                            f"{job['title']} — "
+                            f"{job['company']} | "
+                            f"{job_location}"
+                        )
+
+            else:
+
+                print(
+                    f"⚠️ LinkedIn returned "
+                    f"HTTP {response.status_code}"
+                )
+
+            print(
+                f"✅ Found {len(jobs)} "
+                f"location-matched jobs from LinkedIn"
+            )
+
         except Exception as e:
-            print(f"⚠️ LinkedIn search failed: {e}")
+
+            print(
+                f"⚠️ LinkedIn search failed: {e}"
+            )
+
             return []
 
         return jobs
-    
+
+
+    def location_matches(
+        self,
+        requested_location: str,
+        job_location: str
+    ) -> bool:
+        """Check whether a job location matches the requested location."""
+
+        if not requested_location or not job_location:
+            return False
+
+        requested = requested_location.lower().strip()
+        actual = job_location.lower().strip()
+
+        # Remote search
+        if requested == "remote":
+            return "remote" in actual
+
+        # India-wide search
+        if requested == "india":
+            return (
+                "india" in actual
+                or "remote" in actual
+            )
+
+        # Delhi/NCR
+        if requested in {
+            "delhi",
+            "new delhi",
+            "delhi ncr"
+        }:
+
+            delhi_locations = {
+                "delhi",
+                "new delhi",
+                "delhi ncr",
+                "gurugram",
+                "gurgaon",
+                "noida",
+                "faridabad",
+                "ghaziabad"
+            }
+
+            return any(
+                city in actual
+                for city in delhi_locations
+            )
+
+        # Generic location matching
+        return (
+            requested in actual
+            or actual in requested
+        )
     def parse_linkedin_job(self, card) -> Dict:
         """Parse LinkedIn job card"""
         try:
@@ -596,8 +730,13 @@ class SimpleJobSearch:
         
         return job_data
       
-    def search_jobs(self, job_title: str, location: str = "India") -> List[Dict]:
-        """Search recent jobs from LinkedIn."""
+    def search_jobs(
+        self,
+        job_title: str,
+        location: str = "India",
+        recency_days: int = 30
+    ) -> List[Dict]:
+        """Search recent jobs from LinkedIn using the requested freshness window."""
 
         print(f"\n🚀 Starting job search for: {job_title}")
         print("=" * 50)
@@ -606,7 +745,10 @@ class SimpleJobSearch:
         linkedin_jobs = self.search_linkedin(job_title, location)
 
         # Filter out jobs older than 30 days
-        cutoff_date = datetime.now().date() - timedelta(days=30)
+        cutoff_date = (
+            datetime.now().date()
+            - timedelta(days=recency_days)
+        )
 
         filtered_jobs = []
 

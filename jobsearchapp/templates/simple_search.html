@@ -160,11 +160,112 @@
             background: linear-gradient(135deg, #0077b5, #005885);
         }
 
-        .source-badge.timesjobs {
-            background: linear-gradient(135deg, #ff6900, #cc5500);
+        
+        /* AI Matching */
+
+        .ai-match {
+            margin: 18px 0;
+            padding: 16px;
+            background: linear-gradient(135deg, #f5f7ff, #f8f5ff);
+            border: 1px solid #e1e5ff;
+            border-radius: 10px;
         }
-        .source-badge.linkedin.sample {
-            background: linear-gradient(135deg, #6c757d, #495057);
+
+        .ai-match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .ai-match-title {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .match-score {
+            font-size: 1.3em;
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        .match-bar {
+            width: 100%;
+            height: 9px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .match-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+        }
+
+        .match-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .match-metric {
+            background: white;
+            padding: 10px;
+            border-radius: 7px;
+            border: 1px solid #eee;
+        }
+
+        .metric-label {
+            display: block;
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .skills-section {
+            margin-top: 14px;
+        }
+
+        .skills-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .skill-tag {
+            display: inline-block;
+            padding: 5px 9px;
+            margin: 3px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .skill-match {
+            background: #e8f7ee;
+            color: #218838;
+        }
+
+        .skill-missing {
+            background: #fff1f1;
+            color: #c0392b;
+        }
+
+        .insufficient-match {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fff8e6;
+            color: #856404;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -172,41 +273,43 @@
     <div class="container">
         <div class="header">
             <h1>🔍 Job Search</h1>
-            <p>Find jobs from LinkedIn and TimesJobs</p>
+            <p>AI-powered job search and personalized resume matching</p>
         </div>
-        
-        <div class="search-form">
-            <form id="searchForm">
-                <div class="form-group">
-                    <label for="jobTitle">Job Title</label>
-                    <input type="text" id="jobTitle" placeholder="e.g., Python Developer, Software Engineer" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="location">Location</label>
-                    <input type="text" id="location" placeholder="e.g., Bangalore, Mumbai, Remote" value="India">
-                </div>
-                
-                <button type="submit" class="search-btn" id="searchBtn">
-                    🚀 Search Jobs
-                </button>
-            </form>
-        </div>
-        
-        <div id="results" class="results">
-            <div id="jobsList"></div>
-        </div>
-    </div>
+       <div class="search-form">
+    <form id="searchForm">
+        <div class="form-group">
+            <label for="smartQuery">
+                🔎 Describe the job you're looking for
+            </label>
 
+            <input
+                type="text"
+                id="smartQuery"
+                placeholder="e.g., Find Python developer jobs in Bangalore"
+                required
+            >
+
+            <small style="display:block; margin-top:8px; color:#6c757d;">
+                Search naturally — mention role, skills, location, experience, or recency.
+            </small>
+        </div>
+
+        <button type="submit" class="search-btn" id="searchBtn">
+            🚀 Search Jobs
+        </button>
+    </form>
+</div> 
+<div id="results" class="results">
+    <div id="jobsList"></div>
+</div>
     <script>
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const jobTitle = document.getElementById('jobTitle').value.trim();
-            const location = document.getElementById('location').value.trim();
-            
-            if (!jobTitle) {
-                alert('Please enter a job title');
+            const query = document.getElementById('smartQuery').value.trim();
+
+            if (!query) {
+                alert('Please describe the job you are looking for');
                 return;
             }
             
@@ -220,17 +323,22 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        job_title: jobTitle,
-                        location: location
+                        query: query
                     })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
+
+                    displayParsedQuery(data.parsed_query);
+
                     displayJobs(data.jobs);
+
                 } else {
+
                     showError(data.error || 'Search failed');
+
                 }
                 
             } catch (error) {
@@ -255,15 +363,84 @@
             searchBtn.disabled = true;
             searchBtn.textContent = '🔍 Searching...';
         }
-        
+        function displayParsedQuery(parsed) {
+
+            if (!parsed) {
+                return;
+            }
+
+            const jobsList = document.getElementById('jobsList');
+
+            const skills =
+                parsed.skills && parsed.skills.length > 0
+                    ? parsed.skills.join(', ')
+                    : 'None detected';
+
+            const experience =
+                parsed.experience_level || 'Any';
+
+            const recency =
+                parsed.recency_days !== undefined
+                    ? `${parsed.recency_days} days`
+                    : '30 days';
+
+            const summary = document.createElement('div');
+
+            summary.className = 'parsed-query';
+
+            summary.innerHTML = `
+                <div style="
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background: #f5f7ff;
+                    border: 1px solid #e1e5ff;
+                    border-radius: 10px;
+                ">
+                    <strong>🧠 Search understood as:</strong>
+
+                    <div style="
+                        margin-top: 8px;
+                        color: #2c3e50;
+                        line-height: 1.6;
+                    ">
+                        <div>
+                            💼 <strong>Role:</strong>
+                            ${escapeHtml(parsed.job_title || 'Any')}
+                        </div>
+
+                        <div>
+                            📍 <strong>Location:</strong>
+                            ${escapeHtml(parsed.location || 'India')}
+                        </div>
+
+                        <div>
+                            🛠 <strong>Skills:</strong>
+                            ${escapeHtml(skills)}
+                        </div>
+
+                        <div>
+                            🎓 <strong>Experience:</strong>
+                            ${escapeHtml(experience)}
+                        </div>
+
+                        <div>
+                            📅 <strong>Recency:</strong>
+                            ${escapeHtml(recency)}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            jobsList.prepend(summary);
+        }
         function displayJobs(jobs) {
             const jobsList = document.getElementById('jobsList');
             const searchBtn = document.getElementById('searchBtn');
-            
+
             // Re-enable search button
             searchBtn.disabled = false;
             searchBtn.textContent = '🚀 Search Jobs';
-            
+
             if (jobs.length === 0) {
                 jobsList.innerHTML = `
                     <div class="no-results">
@@ -273,50 +450,296 @@
                 `;
                 return;
             }
-            
+
             let html = `<h2>Found ${jobs.length} Jobs</h2>`;
-            
+
             jobs.forEach((job, index) => {
+
+                const score =
+                    job.final_score ??
+                    job.match_score ??
+                    job.overall_score ??
+                    null;
+
+                let aiSection = '';
+
+                if (score !== null && score !== undefined) {
+
+                    const semanticValue =
+                        job.semantic_score ??
+                        job.semantic_match ??
+                        job.semantic_similarity ??
+                        null;
+
+                    const skillValue =
+                        job.skill_score ??
+                        job.skill_match ??
+                        job.skill_match_score ??
+                        null;
+
+                    const semanticScore =
+                        semanticValue !== null
+                            ? `${Number(semanticValue).toFixed(1)}%`
+                            : 'N/A';
+
+                    const skillScore =
+                        skillValue !== null
+                            ? `${Number(skillValue).toFixed(1)}%`
+                            : 'N/A';
+
+                    const matchedSkills = job.matched_skills || [];
+                    const missingSkills = job.missing_skills || [];
+
+                    let matchedHTML = '';
+
+                    if (matchedSkills.length > 0) {
+                        matchedHTML = `
+                            <div class="skills-section">
+                                <div class="skills-title">
+                                    ✅ Skills you match
+                                </div>
+
+                                ${matchedSkills.map(skill => `
+                                    <span class="skill-tag skill-match">
+                                        ${escapeHtml(skill)}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+
+                    let missingHTML = '';
+
+                    if (missingSkills.length > 0) {
+                        missingHTML = `
+                            <div class="skills-section">
+                                <div class="skills-title">
+                                    📚 Skills to develop
+                                </div>
+
+                                ${missingSkills.map(skill => `
+                                    <span class="skill-tag skill-missing">
+                                        ${escapeHtml(skill)}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+
+                    aiSection = `
+                        <div class="ai-match">
+
+                            <div class="ai-match-header">
+                                <div class="ai-match-title">
+                                    🤖 AI Resume Match
+                                    <div style="
+                                        font-size: 0.75em;
+                                        color: #667eea;
+                                        margin-top: 3px;
+                                    ">
+                                        ${escapeHtml(job.recommendation || 'Match')}
+                                    </div>
+                                </div>
+
+                                <div class="match-score">
+                                    ${Number(score).toFixed(1)}%
+                                </div>
+                            </div>
+
+                            <div class="match-bar">
+                                <div
+                                    class="match-bar-fill"
+                                    style="width: ${Math.min(Number(score), 100)}%"
+                                ></div>
+                            </div>
+
+                            <div class="match-metrics">
+
+                                <div class="match-metric">
+                                    <span class="metric-label">
+                                        🧠 Semantic Match
+                                    </span>
+
+                                    <span class="metric-value">
+                                        ${semanticScore}
+                                    </span>
+                                </div>
+
+                                <div class="match-metric">
+                                    <span class="metric-label">
+                                        🛠 Skill Match
+                                    </span>
+
+                                    <span class="metric-value">
+                                        ${skillScore}
+                                    </span>
+                                </div>
+
+                            </div>
+
+                            ${matchedHTML}
+                            ${missingHTML}
+                            ${job.match_reasons && job.match_reasons.length > 0 ? `
+                                <div class="skills-section">
+                                    <div class="skills-title">
+                                        💡 Why this matches you
+                                    </div>
+
+                                    ${job.match_reasons.map(reason => `
+                                        <div style="
+                                            margin: 5px 0;
+                                            color: #218838;
+                                            font-size: 0.88em;
+                                        ">
+                                            ✓ ${escapeHtml(reason)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+
+                            ${job.gap_reasons && job.gap_reasons.length > 0 ? `
+                                <div class="skills-section">
+                                    <div class="skills-title">
+                                        📚 Potential skill gaps
+                                    </div>
+
+                                    ${job.gap_reasons.map(reason => `
+                                        <div style="
+                                            margin: 5px 0;
+                                            color: #c0392b;
+                                            font-size: 0.88em;
+                                        ">
+                                            ⚠ ${escapeHtml(reason)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+` : ''}
+
+                        </div>
+                    `;
+
+               } else {
+
+                    aiSection = `
+                        <div class="ai-match">
+
+                            <div class="ai-match-header">
+                                <div class="ai-match-title">
+                                    🤖 AI Resume Match
+                                </div>
+
+                                <div class="match-score">
+                                    N/A
+                                </div>
+                            </div>
+
+                            <div class="insufficient-match">
+                                ⚠️ AI matching data was not returned for this job.
+                            </div>
+
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="job-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div class="job-title">${job.title}</div>
-                            <div class="source-badge ${job.source.toLowerCase()}">${getSourceIcon(job.source)} ${job.source}</div>
+
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 10px;
+                        ">
+
+                            <div class="job-title">
+                                ${escapeHtml(job.title || 'Job Title')}
+                            </div>
+
+                            <div class="source-badge linkedin">
+                                💼 LinkedIn
+                            </div>
+
                         </div>
-                        <div class="job-company">🏢 ${job.company}</div>
-                        
+
+                        <div class="job-company">
+                            🏢 ${escapeHtml(job.company || 'Company')}
+                        </div>
+
                         <div class="job-details">
+
                             <div class="job-detail">
-                                <span>📍</span> ${job.location}
+                                <span>📍</span>
+                                ${escapeHtml(job.location || 'Location not specified')}
                             </div>
+
                             <div class="job-detail">
-                                <span>💼</span> ${job.experience}
+                                <span>💼</span>
+                                ${escapeHtml(job.experience || 'Not specified')}
                             </div>
+
                             <div class="job-detail">
-                                <span>💰</span> ${job.salary}
+                                <span>💰</span>
+                                ${escapeHtml(job.salary || 'Not disclosed')}
                             </div>
+
                         </div>
-                        
-                        ${job.description ? `<div class="job-description" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #6c757d;">${job.description}</div>` : ''}
-                        
-                        <a href="${job.apply_url}" target="_blank" class="apply-btn">
+
+                        ${aiSection}
+
+                        ${
+                            job.description
+                            ? `
+                                <div
+                                    class="job-description"
+                                    style="
+                                        margin: 15px 0;
+                                        padding: 10px;
+                                        background: #f8f9fa;
+                                        border-radius: 5px;
+                                        font-size: 0.9em;
+                                        color: #6c757d;
+                                    "
+                                >
+                                    ${escapeHtml(
+                                        job.description.substring(0, 500)
+                                    )}${job.description.length > 500 ? '...' : ''}
+                                </div>
+                            `
+                            : ''
+                        }
+
+                        <a
+                            href="${job.apply_url || '#'}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="apply-btn"
+                        >
                             Apply Now →
                         </a>
+
                     </div>
                 `;
             });
-            
+
             jobsList.innerHTML = html;
         }
-        
-        function getSourceIcon(source) {
-            if (source.toLowerCase().includes('linkedin')) {
-                return '💼';
-            } else if (source.toLowerCase().includes('timesjobs')) {
-                return '📰';
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return '';
             }
-            return '🔍';
+
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
+        function getSourceIcon(source) {
+            return '💼';
+        }
+      
         
         function showError(message) {
             const jobsList = document.getElementById('jobsList');
