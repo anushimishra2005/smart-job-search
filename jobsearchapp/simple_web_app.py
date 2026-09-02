@@ -1,4 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
+from pathlib import Path
+from werkzeug.utils import secure_filename
+from uuid import uuid4
+import os
 
 from simple_job_search import SimpleJobSearch
 from query_parser import parse_query
@@ -9,7 +13,39 @@ from query_relevance import rank_jobs_by_query
 
 app = Flask(__name__)
 
+app.secret_key = os.environ.get(
+    "FLASK_SECRET_KEY",
+    "dev-secret-key-change-in-production"
+)
+
 searcher = SimpleJobSearch()
+
+
+# =========================================================
+# RESUME UPLOAD CONFIGURATION
+# =========================================================
+
+BASE_DIR = Path(__file__).resolve().parent
+
+UPLOAD_FOLDER = BASE_DIR / "uploads"
+
+ALLOWED_RESUME_EXTENSIONS = {
+    ".pdf",
+    ".docx"
+}
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+
+UPLOAD_FOLDER.mkdir(exist_ok=True)
+
+
+def allowed_resume_file(filename):
+    """Check whether the uploaded file is a supported resume format."""
+
+    extension = Path(filename).suffix.lower()
+
+    return extension in ALLOWED_RESUME_EXTENSIONS
 
 
 # =========================================================
@@ -19,6 +55,124 @@ searcher = SimpleJobSearch()
 @app.route("/")
 def home():
     return render_template("simple_search.html")
+
+
+# =========================================================
+# RESUME UPLOAD API
+# =========================================================
+
+@app.route("/upload-resume", methods=["POST"])
+def upload_resume():
+
+    try:
+
+        if "resume" not in request.files:
+
+            return jsonify({
+                "success": False,
+                "error": "No resume file uploaded"
+            }), 400
+
+        resume = request.files["resume"]
+
+        if resume.filename == "":
+
+            return jsonify({
+                "success": False,
+                "error": "No resume selected"
+            }), 400
+
+        if not allowed_resume_file(resume.filename):
+
+            return jsonify({
+                "success": False,
+                "error": "Unsupported resume format. Please upload a PDF or DOCX file."
+            }), 400
+
+        filename = secure_filename(resume.filename)
+
+        if not filename:
+
+            return jsonify({
+                "success": False,
+                "error": "Invalid filename"
+            }), 400
+
+        # ---------------------------------------------------------
+        # Generate unique server-side filename
+        # ---------------------------------------------------------
+
+        extension = Path(filename).suffix.lower()
+
+        unique_filename = f"{uuid4().hex}{extension}"
+
+        file_path = UPLOAD_FOLDER / unique_filename
+
+        resume.save(file_path)
+
+        print("\n📄 Resume uploaded")
+        print("=" * 50)
+        print(f"Original filename: {filename}")
+        print(f"Stored filename:   {unique_filename}")
+        print(f"Path:              {file_path}")
+
+        # ---------------------------------------------------------
+        # Verify uploaded resume can be parsed
+        # ---------------------------------------------------------
+
+        from resume_parser import extract_resume_text
+
+        resume_text = extract_resume_text(file_path)
+
+        if not resume_text.strip():
+
+            file_path.unlink(missing_ok=True)
+
+            return jsonify({
+                "success": False,
+                "error": "The uploaded resume contains no readable text."
+            }), 400
+
+        print(
+            f"Characters extracted: {len(resume_text)}"
+        )
+
+        # ---------------------------------------------------------
+        # Store resume in current browser session
+        # ---------------------------------------------------------
+
+        session["resume_path"] = str(file_path)
+        session["resume_filename"] = filename
+
+        # ---------------------------------------------------------
+        # Return safe information to frontend
+        # ---------------------------------------------------------
+
+        return jsonify({
+
+            "success": True,
+
+            "message": "Resume uploaded successfully",
+
+            "filename": filename,
+
+            "text_length": len(resume_text)
+
+        })
+
+    except Exception as e:
+
+        print("\n❌ RESUME UPLOAD ERROR")
+        print("=" * 50)
+        print(str(e))
+
+        return jsonify({
+
+            "success": False,
+
+            "error": str(e)
+
+        }), 500
 
 
 # =========================================================
@@ -85,7 +239,7 @@ def search_jobs():
             )
 
         # ---------------------------------------------------------
-        # Display parsed query in terminal
+        # Display parsed query
         # ---------------------------------------------------------
 
         print("\n🧠 Parsed Search Query")
@@ -155,14 +309,35 @@ def search_jobs():
 
         try:
 
+            resume_path = session.get("resume_path")
+
+            if not resume_path:
+
+                return jsonify({
+                    "success": False,
+                    "error": "Please upload your resume before searching for jobs."
+                }), 400
+
+            resume_file = Path(resume_path)
+
+            if not resume_file.exists():
+
+                session.pop("resume_path", None)
+                session.pop("resume_filename", None)
+
+                return jsonify({
+                    "success": False,
+                    "error": "Uploaded resume is no longer available. Please upload it again."
+                }), 400
+
             jobs = match_jobs_with_resume(
                 jobs,
-                "resume.pdf"
+                str(resume_file)
             )
 
             print(
                 f"🤖 AI matched {len(jobs)} "
-                f"jobs against resume"
+                f"jobs against uploaded resume"
             )
 
         except Exception as e:
@@ -170,9 +345,6 @@ def search_jobs():
             print(
                 f"⚠️ AI matching failed: {e}"
             )
-
-            # Keep search functional even if
-            # the AI matcher fails.
 
             for job in jobs:
 
@@ -209,7 +381,7 @@ def search_jobs():
             )
 
         # ---------------------------------------------------------
-        # 6. Return response to frontend
+        # 6. Return response
         # ---------------------------------------------------------
 
         return jsonify({
@@ -223,10 +395,6 @@ def search_jobs():
             "parsed_query": parsed
 
         })
-
-    # =========================================================
-    # GLOBAL ERROR HANDLER
-    # =========================================================
 
     except Exception as e:
 

@@ -267,6 +267,88 @@
             color: #856404;
             font-size: 0.9em;
         }
+        /* Resume Upload */
+
+        .resume-upload {
+            padding: 30px 40px 10px;
+            background: #ffffff;
+        }
+
+        .resume-upload-card {
+            padding: 20px;
+            border: 2px dashed #d8def7;
+            border-radius: 12px;
+            background: #f8f9ff;
+            text-align: center;
+        }
+
+        .resume-upload-card h3 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .resume-upload-card p {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .resume-upload-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resume-file-input {
+            max-width: 350px;
+            padding: 10px;
+            background: white;
+        }
+
+        .upload-btn {
+            background: #667eea;
+            color: white;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 7px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .upload-btn:hover {
+            background: #5568d9;
+        }
+
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .upload-status {
+            margin-top: 12px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .upload-success {
+            color: #218838;
+        }
+
+        .upload-error {
+            color: #c0392b;
+        }
+
+        @media (max-width: 600px) {
+            .resume-upload-row {
+                flex-direction: column;
+            }
+
+            .resume-file-input {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -275,6 +357,48 @@
             <h1>🔍 Job Search</h1>
             <p>AI-powered job search and personalized resume matching</p>
         </div>
+        <!-- =====================================================
+     RESUME UPLOAD
+     ===================================================== -->
+
+<div class="resume-upload">
+
+    <div class="resume-upload-card">
+
+        <h3>📄 Upload Your Resume</h3>
+
+        <p>
+            Upload a PDF or DOCX resume to get personalized
+            AI-powered job matching.
+        </p>
+
+        <div class="resume-upload-row">
+
+            <input
+                type="file"
+                id="resumeFile"
+                class="resume-file-input"
+                accept=".pdf,.docx"
+            >
+
+            <button
+                type="button"
+                id="uploadResumeBtn"
+                class="upload-btn"
+            >
+                📤 Upload Resume
+            </button>
+
+        </div>
+
+        <div
+            id="uploadStatus"
+            class="upload-status"
+        ></div>
+
+    </div>
+
+</div>
        <div class="search-form">
     <form id="searchForm">
         <div class="form-group">
@@ -303,6 +427,123 @@
     <div id="jobsList"></div>
 </div>
     <script>
+        // =========================================================
+        // RESUME UPLOAD
+        // =========================================================
+
+        document.getElementById('uploadResumeBtn').addEventListener(
+            'click',
+            async () => {
+
+                const fileInput =
+                    document.getElementById('resumeFile');
+
+                const uploadBtn =
+                    document.getElementById('uploadResumeBtn');
+
+                const uploadStatus =
+                    document.getElementById('uploadStatus');
+
+                const file = fileInput.files[0];
+
+                // ---------------------------------------------------------
+                // Validate file selection
+                // ---------------------------------------------------------
+
+                if (!file) {
+
+                    uploadStatus.textContent =
+                        'Please select a PDF or DOCX resume first.';
+
+                    uploadStatus.className =
+                        'upload-status upload-error';
+
+                    return;
+                }
+
+                // ---------------------------------------------------------
+                // Validate extension
+                // ---------------------------------------------------------
+
+                const filename = file.name.toLowerCase();
+
+                if (
+                    !filename.endsWith('.pdf') &&
+                    !filename.endsWith('.docx')
+                ) {
+
+                    uploadStatus.textContent =
+                        'Only PDF and DOCX resumes are supported.';
+
+                    uploadStatus.className =
+                        'upload-status upload-error';
+
+                    return;
+                }
+
+                // ---------------------------------------------------------
+                // Prepare upload
+                // ---------------------------------------------------------
+
+                const formData = new FormData();
+
+                formData.append('resume', file);
+
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '📤 Uploading...';
+
+                uploadStatus.textContent =
+                    'Uploading and processing your resume...';
+
+                uploadStatus.className =
+                    'upload-status';
+
+                try {
+
+                    const response = await fetch(
+                        '/upload-resume',
+                        {
+                            method: 'POST',
+                            body: formData
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    if (data.success) {
+
+                        uploadStatus.textContent =
+                            `✅ ${data.filename} uploaded successfully. ` +
+                            `${data.text_length} characters extracted.`;
+
+                        uploadStatus.className =
+                            'upload-status upload-success';
+
+                    } else {
+
+                        uploadStatus.textContent =
+                            `❌ ${data.error || 'Resume upload failed.'}`;
+
+                        uploadStatus.className =
+                            'upload-status upload-error';
+                    }
+
+                } catch (error) {
+
+                    uploadStatus.textContent =
+                        `❌ Upload failed: ${error.message}`;
+
+                    uploadStatus.className =
+                        'upload-status upload-error';
+
+                } finally {
+
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = '📤 Upload Resume';
+
+                }
+            }
+        );
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
