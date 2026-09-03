@@ -6,124 +6,163 @@
     <title>Simple Job Search</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        body {
+            font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f6fb;
+            color: #18213d;
             min-height: 100vh;
-            padding: 20px;
+            padding: 28px;
         }
-        .container { 
-            max-width: 800px; 
-            margin: 0 auto; 
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 16px 50px rgba(31, 41, 72, 0.10);
             overflow: hidden;
         }
-        .header { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 30px; 
-            text-align: center; 
+        .header {
+            background: linear-gradient(120deg, #172554 0%, #4338ca 52%, #7c3aed 100%);
+            color: white;
+            padding: 42px 44px 38px;
+            text-align: left;
+            position: relative;
         }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .header p { opacity: 0.8; }
-        .search-form { 
-            padding: 40px; 
-            background: #f8f9fa;
+        .header::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            right: -90px;
+            top: -130px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
         }
-        .form-group { 
-            margin-bottom: 25px; 
+        .header h1 {
+            font-size: 2.65rem;
+            line-height: 1.1;
+            margin: 0 0 10px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
         }
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: 600; 
-            color: #2c3e50;
+        .header p {
+            opacity: 0.88;
+            margin: 0;
+            font-size: 1.02rem;
+            position: relative;
+            z-index: 1;
         }
-        input { 
-            width: 100%; 
-            padding: 15px; 
-            border: 2px solid #e9ecef; 
-            border-radius: 8px; 
-            font-size: 16px;
-            transition: border-color 0.3s;
+        .search-form {
+            margin: 28px 32px 34px;
+            padding: 30px;
+            background: #ffffff;
+            border: 1px solid #e6e9f2;
+            border-radius: 20px;
+            box-shadow: 0 10px 32px rgba(35, 43, 77, 0.07);
         }
-        input:focus { 
-            outline: none; 
-            border-color: #667eea; 
+        .form-group {
+            margin-bottom: 0;
         }
-        .search-btn { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            padding: 15px 30px; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 18px; 
-            font-weight: 600;
-            cursor: pointer; 
+        label {
+            display: block;
+            margin-bottom: 9px;
+            font-weight: 650;
+            color: #273252;
+        }
+        input {
             width: 100%;
-            transition: transform 0.2s;
+            box-sizing: border-box;
+            padding: 16px 18px;
+            border: 1px solid #dfe3ee;
+            border-radius: 11px;
+            font-size: 16px;
+            background: #ffffff;
+            color: #202a44;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .search-btn:hover { 
-            transform: translateY(-2px); 
+        input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.10);
+        }
+        .search-btn {
+            background: linear-gradient(90deg, #5b6ff0 0%, #6739df 52%, #7c2dca 100%);
+            color: white;
+            padding: 0 30px;
+            height: 56px;
+            border: none;
+            border-radius: 11px;
+            font-size: 16px;
+            font-weight: 750;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 22px rgba(103, 57, 223, 0.22);
+        }
+        .search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 11px 26px rgba(103, 57, 223, 0.28);
         }
         .search-btn:disabled { 
             opacity: 0.6; 
             cursor: not-allowed; 
         }
-        .results { 
-            padding: 0 40px 40px; 
-            display: none; 
+        .results {
+            padding: 0 32px 42px;
+            display: none;
         }
-        .job-card { 
-            background: white; 
-            border: 1px solid #e9ecef; 
-            border-radius: 10px; 
-            padding: 20px; 
-            margin-bottom: 20px; 
+        .job-card {
+            background: #ffffff;
+            border: 1px solid #e7eaf2;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 18px;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .job-card:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1); 
+        .job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(35, 43, 77, 0.09);
         }
-        .job-title { 
-            font-size: 1.4em; 
-            font-weight: 600; 
-            color: #2c3e50; 
-            margin-bottom: 10px; 
+        .job-title {
+            font-size: 1.35rem;
+            font-weight: 750;
+            color: #18213d;
+            margin-bottom: 8px;
         }
-        .job-company { 
-            color: #667eea; 
-            font-weight: 500; 
-            margin-bottom: 15px; 
+        .job-company {
+            color: #5b5ce2;
+            font-weight: 600;
+            margin-bottom: 16px;
         }
-        .job-details { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 10px; 
-            margin-bottom: 15px; 
+        .job-details {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
         }
-        .job-detail { 
-            display: flex; 
-            align-items: center; 
-            color: #6c757d; 
+        .job-detail {
+            display: flex;
+            align-items: center;
+            color: #667085;
+            font-size: 0.9rem;
         }
-        .job-detail span { 
-            margin-right: 8px; 
+        .job-detail span {
+            margin-right: 8px;
         }
-        .apply-btn { 
-            background: #28a745; 
-            color: white; 
-            padding: 10px 20px; 
-            text-decoration: none; 
-            border-radius: 5px; 
-            display: inline-block; 
-            transition: background 0.2s;
+        .apply-btn {
+            background: #111827;
+            color: white;
+            padding: 11px 19px;
+            text-decoration: none;
+            border-radius: 9px;
+            display: inline-block;
+            transition: transform 0.2s, background 0.2s;
         }
-        .apply-btn:hover { 
-            background: #218838; 
+        .apply-btn:hover {
+            background: #293548;
+            transform: translateY(-1px);
         }
         .loading { 
             text-align: center; 
@@ -270,16 +309,16 @@
         /* Resume Upload */
 
         .resume-upload {
-            padding: 30px 40px 10px;
+            padding: 30px 32px 0;
             background: #ffffff;
         }
 
         .resume-upload-card {
-            padding: 20px;
-            border: 2px dashed #d8def7;
-            border-radius: 12px;
-            background: #f8f9ff;
-            text-align: center;
+            padding: 26px 30px;
+            border: 1px dashed #cbd5ff;
+            border-radius: 17px;
+            background: linear-gradient(180deg, #fbfcff 0%, #f7f8ff 100%);
+            text-align: left;
         }
         .job-description {
             margin: 18px 0;
@@ -303,16 +342,141 @@
         }
 
         .resume-upload-card h3 {
-            color: #2c3e50;
-            margin-bottom: 8px;
+            color: #18213d;
+            margin-bottom: 7px;
         }
 
         .resume-upload-card p {
-            color: #6c757d;
+            color: #69758f;
             font-size: 0.9em;
             margin-bottom: 15px;
         }
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-top: 24px;
+            margin-bottom: 24px;
+            padding-top: 22px;
+            border-top: 1px solid #e8ebf3;
+        }
 
+        .filter-group {
+            padding: 0 18px;
+            border-right: 1px solid #e5e8f0;
+            min-width: 0;
+        }
+
+        .filter-group:first-child {
+            padding-left: 0;
+        }
+
+        .filter-group:last-child {
+            padding-right: 0;
+            border-right: none;
+        }
+
+        .filter-group label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.82rem;
+            font-weight: 650;
+            color: #69758f;
+            margin-bottom: 9px;
+        }
+
+        .filter-group select {
+            width: 100%;
+            height: 48px;
+            box-sizing: border-box;
+            padding: 0 36px 0 13px;
+            border: 1px solid #dfe3ed;
+            border-radius: 9px;
+            background: #ffffff;
+            color: #273252;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .filter-group select:hover {
+            border-color: #bfc6d9;
+        }
+
+        .filter-group select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.09);
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                max-width: 100%;
+            }
+
+            .filter-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                row-gap: 20px;
+            }
+
+            .filter-group:nth-child(2) {
+                border-right: none;
+            }
+
+            .filter-group:nth-child(3) {
+                padding-left: 0;
+            }
+
+            .filter-group:nth-child(4) {
+                padding-right: 0;
+            }
+
+            .job-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 30px 24px;
+            }
+
+            .header h1 {
+                font-size: 2.1rem;
+            }
+
+            .resume-upload,
+            .results {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .search-form {
+                margin: 18px;
+                padding: 22px;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .filter-group,
+            .filter-group:nth-child(3),
+            .filter-group:nth-child(4) {
+                padding: 0;
+                border-right: none;
+            }
+
+            .job-details {
+                grid-template-columns: 1fr;
+            }
+        }
         .resume-upload-row {
             display: flex;
             gap: 10px;
@@ -327,18 +491,19 @@
         }
 
         .upload-btn {
-            background: #667eea;
+            background: linear-gradient(90deg, #5b6ff0, #6d3fe0);
             color: white;
-            padding: 11px 20px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 7px;
-            font-size: 15px;
-            font-weight: 600;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
+            box-shadow: 0 5px 14px rgba(103, 57, 223, 0.18);
         }
 
         .upload-btn:hover {
-            background: #5568d9;
+            background: linear-gradient(90deg, #5266e9, #6335d5);
         }
 
         .upload-btn:disabled {
@@ -436,6 +601,57 @@
             <small style="display:block; margin-top:8px; color:#6c757d;">
                 Search naturally — mention role, skills, location, experience, or recency.
             </small>
+            <div class="filter-row">
+
+                <div class="filter-group">
+                    <label for="filterLocation">📍 Location</label>
+                    <select id="filterLocation">
+                        <option value="">Any Location</option>
+                        <option value="India">India</option>
+                        <option value="Delhi">Delhi / NCR</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Remote">Remote</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterExperience">🎓 Experience</label>
+                    <select id="filterExperience">
+                        <option value="">Any Experience</option>
+                        <option value="entry-level">Entry Level</option>
+                        <option value="junior">Junior</option>
+                        <option value="mid">Mid Level</option>
+                        <option value="senior">Senior</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterEmployment">💼 Employment Type</label>
+                    <select id="filterEmployment">
+                        <option value="">Any Type</option>
+                        <option value="FULL_TIME">Full Time</option>
+                        <option value="PART_TIME">Part Time</option>
+                        <option value="CONTRACT">Contract</option>
+                        <option value="INTERNSHIP">Internship</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterRecency">📅 Posted Within</label>
+                    <select id="filterRecency">
+                        <option value="">Any Time</option>
+                        <option value="1">Last 24 hours</option>
+                        <option value="7">Last 7 days</option>
+                        <option value="14">Last 14 days</option>
+                        <option value="30">Last 30 days</option>
+                    </select>
+                </div>
+
+            </div>
         </div>
 
         <button type="submit" class="search-btn" id="searchBtn">
@@ -565,18 +781,24 @@
             }
         );
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+    e.preventDefault();
+
             const query = document.getElementById('smartQuery').value.trim();
 
             if (!query) {
                 alert('Please describe the job you are looking for');
                 return;
             }
-            
+
+            // Read structured filters
+            const location = document.getElementById('filterLocation').value;
+            const experience = document.getElementById('filterExperience').value;
+            const employmentType = document.getElementById('filterEmployment').value;
+            const recency = document.getElementById('filterRecency').value;
+
             // Show loading
             showLoading();
-            
+
             try {
                 const response = await fetch('/search', {
                     method: 'POST',
@@ -584,12 +806,16 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        query: query
+                        query: query,
+                        filter_location: location,
+                        filter_experience: experience,
+                        filter_employment: employmentType,
+                        filter_recency: recency
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
 
                     displayParsedQuery(data.parsed_query);
@@ -601,9 +827,11 @@
                     showError(data.error || 'Search failed');
 
                 }
-                
+
             } catch (error) {
+
                 showError('Network error: ' + error.message);
+
             }
         });
         
