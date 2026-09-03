@@ -281,6 +281,26 @@
             background: #f8f9ff;
             text-align: center;
         }
+        .job-description {
+            margin: 18px 0;
+            padding: 16px;
+            background: #f8f9fa;
+            border: 1px solid #eef0f3;
+            border-radius: 8px;
+        }
+
+        .description-title {
+            font-size: 0.95em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .description-text {
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #5f6b7a;
+        }
 
         .resume-upload-card h3 {
             color: #2c3e50;
@@ -943,6 +963,11 @@
 
                             <div class="job-detail">
                                 <span>💼</span>
+                                ${formatEmploymentType(job.employment_type)}
+                            </div>
+
+                            <div class="job-detail">
+                                <span>🎓</span>
                                 ${escapeHtml(job.experience || 'Not specified')}
                             </div>
 
@@ -951,31 +976,34 @@
                                 ${escapeHtml(job.salary || 'Not disclosed')}
                             </div>
 
+                            <div class="job-detail">
+                                <span>📅</span>
+                                ${job.posted_date
+                                    ? `Posted ${escapeHtml(job.posted_date)}`
+                                    : 'Posting date unavailable'}
+                            </div>
+
                         </div>
 
                         ${aiSection}
 
-                        ${
-                            job.description
-                            ? `
-                                <div
-                                    class="job-description"
-                                    style="
-                                        margin: 15px 0;
-                                        padding: 10px;
-                                        background: #f8f9fa;
-                                        border-radius: 5px;
-                                        font-size: 0.9em;
-                                        color: #6c757d;
-                                    "
-                                >
-                                    ${escapeHtml(
-                                        job.description.substring(0, 500)
-                                    )}${job.description.length > 500 ? '...' : ''}
+                     ${
+                        job.description
+                        ? `
+                            <div class="job-description">
+                                <div class="description-title">
+                                    📋 Job Description
                                 </div>
-                            `
-                            : ''
-                        }
+
+                                <div class="description-text">
+                                    ${escapeHtml(
+                                        job.description.substring(0, 700)
+                                    )}${job.description.length > 700 ? '...' : ''}
+                                </div>
+                            </div>
+                        `
+                        : ''
+                    }   
 
                         <a
                             href="${job.apply_url || '#'}"
@@ -1028,6 +1056,18 @@
         }
         function getSourceIcon(source) {
             return '💼';
+        }
+        function formatEmploymentType(type) {
+            if (!type) {
+                return 'Not specified';
+            }
+
+            const formatted = String(type)
+                .toLowerCase()
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, char => char.toUpperCase());
+
+            return formatted;
         }
       
         

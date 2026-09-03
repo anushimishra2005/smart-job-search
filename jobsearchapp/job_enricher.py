@@ -3,7 +3,7 @@ import html
 import sqlite3
 from bs4 import BeautifulSoup
 import requests
-
+from skill_extractor import extract_skills
 
 HEADERS = {
     "User-Agent": (
@@ -75,11 +75,19 @@ def enrich_job(job_url):
     if posted_date:
         posted_date = posted_date[:10]
 
+    description = clean_html(data.get("description", ""))
+    structured_skills = data.get("skills", "")
+
+    if structured_skills:
+        skills = structured_skills
+    else:
+        skills = ", ".join(extract_skills(description))
+
     return {
-        "description": clean_html(data.get("description", "")),
+        "description": description,
         "employment_type": data.get("employmentType"),
         "posted_date": posted_date,
-        "skills": data.get("skills", "")
+        "skills": skills
     }
 
 
