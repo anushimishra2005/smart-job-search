@@ -697,9 +697,8 @@
             jobs.forEach((job, index) => {
 
                 const score =
-                    job.final_score ??
-                    job.match_score ??
-                    job.overall_score ??
+                    job.overall_match_score ??
+                    job.score ??
                     null;
 
                 let aiSection = '';
@@ -772,13 +771,13 @@
 
                             <div class="ai-match-header">
                                 <div class="ai-match-title">
-                                    🤖 AI Resume Match
+                                    🏆 Overall Match
                                     <div style="
                                         font-size: 0.75em;
                                         color: #667eea;
                                         margin-top: 3px;
                                     ">
-                                        ${escapeHtml(job.recommendation || 'Match')}
+                                        ${getOverallMatchLabel(score)}
                                     </div>
                                 </div>
 
@@ -794,29 +793,58 @@
                                 ></div>
                             </div>
 
-                            <div class="match-metrics">
+                 <div class="match-metrics">
 
-                                <div class="match-metric">
-                                    <span class="metric-label">
-                                        🧠 Semantic Match
-                                    </span>
+    <div class="match-metric">
+        <span class="metric-label">
+            🧠 Resume Match
+        </span>
 
-                                    <span class="metric-value">
-                                        ${semanticScore}
-                                    </span>
-                                </div>
+        <span class="metric-value">
+            ${job.resume_match_score !== null &&
+              job.resume_match_score !== undefined
+                ? `${Number(job.resume_match_score).toFixed(1)}%`
+                : 'N/A'}
+        </span>
+    </div>
 
-                                <div class="match-metric">
-                                    <span class="metric-label">
-                                        🛠 Skill Match
-                                    </span>
+    <div class="match-metric">
+        <span class="metric-label">
+            🔎 Query Relevance
+        </span>
 
-                                    <span class="metric-value">
-                                        ${skillScore}
-                                    </span>
-                                </div>
+        <span class="metric-value">
+            ${job.query_relevance_score !== null &&
+              job.query_relevance_score !== undefined
+                ? `${Number(job.query_relevance_score).toFixed(1)}%`
+                : 'N/A'}
+        </span>
+    </div>
 
-                            </div>
+    <div class="match-metric">
+        <span class="metric-label">
+            🕒 Freshness
+        </span>
+
+        <span class="metric-value">
+            ${job.freshness_score !== null &&
+              job.freshness_score !== undefined
+                ? `${Number(job.freshness_score).toFixed(1)}%`
+                : 'N/A'}
+        </span>
+    </div>
+
+    <div class="match-metric">
+        <span class="metric-label">
+            ⚖️ Ranking Weight
+        </span>
+
+        <span class="metric-value">
+            50% · 30% · 20%
+        </span>
+    </div>
+
+</div>
 
                             ${matchedHTML}
                             ${missingHTML}
@@ -866,7 +894,7 @@
 
                             <div class="ai-match-header">
                                 <div class="ai-match-title">
-                                    🤖 AI Resume Match
+                                    🏆 Overall Match
                                 </div>
 
                                 <div class="match-score">
@@ -963,6 +991,27 @@
             });
 
             jobsList.innerHTML = html;
+        }
+        function getOverallMatchLabel(score) {
+            const value = Number(score);
+
+            if (value >= 80) {
+                return 'Excellent Match';
+            }
+
+            if (value >= 65) {
+                return 'Strong Match';
+            }
+
+            if (value >= 50) {
+                return 'Good Match';
+            }
+
+            if (value >= 35) {
+                return 'Moderate Match';
+            }
+
+            return 'Low Match';
         }
 
         function escapeHtml(value) {
