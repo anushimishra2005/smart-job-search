@@ -9,7 +9,7 @@ from query_parser import parse_query
 from job_matcher import match_jobs_with_resume
 from job_enricher import enrich_jobs
 from query_relevance import rank_jobs_by_query
-
+from overall_ranking import rank_jobs
 
 app = Flask(__name__)
 
@@ -353,17 +353,18 @@ def search_jobs():
                 job["final_score"] = None
 
         # ---------------------------------------------------------
-        # 5. Final Query Relevance Ranking
+        # 5. Final Overall Ranking
         # ---------------------------------------------------------
 
-        jobs = rank_jobs_by_query(
+        jobs = rank_jobs(
             job_title,
             location,
-            jobs
+            jobs,
+            recency_days
         )
 
         print(
-            "📊 Final query relevance ranking completed"
+            "📊 Final overall ranking completed"
         )
 
         # ---------------------------------------------------------
@@ -376,8 +377,10 @@ def search_jobs():
                 f"{index}. "
                 f"{job.get('title', 'Unknown')} — "
                 f"{job.get('company', 'Unknown')} | "
-                f"Query relevance: "
-                f"{job.get('query_relevance_score', 0):.1f}"
+                f"Overall: {job.get('overall_match_score', 0):.1f} | "
+                f"Resume: {job.get('resume_match_score', 0):.1f} | "
+                f"Query: {job.get('query_relevance_score', 0):.1f} | "
+                f"Freshness: {job.get('freshness_score', 0):.1f}"
             )
 
         # ---------------------------------------------------------
