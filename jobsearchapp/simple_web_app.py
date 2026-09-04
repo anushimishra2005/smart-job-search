@@ -267,6 +267,9 @@ def filter_jobs(jobs, location="", experience="", employment_type="", recency_da
                 return "india" in job_location or "remote" in job_location
 
             if location_lower == "delhi":
+                if "india" not in job_location:
+                    return False
+
                 return any(
                     place in job_location
                     for place in [
@@ -398,19 +401,17 @@ def search_jobs():
     try:
 
         data = request.get_json()
-        # ---------------------------------------------------------
-        # Structured search filters
-        # ---------------------------------------------------------
 
-        filter_location = data.get("filter_location", "").strip()
-        filter_experience = data.get("filter_experience", "").strip()
-        filter_employment = data.get("filter_employment", "").strip()
-        filter_recency = data.get("filter_recency", "").strip()
         if not data:
             return jsonify({
                 "success": False,
                 "error": "No search data received"
             }), 400
+
+        filter_location = data.get("filter_location", "").strip()
+        filter_experience = data.get("filter_experience", "").strip()
+        filter_employment = data.get("filter_employment", "").strip()
+        filter_recency = data.get("filter_recency", "").strip()
 
         # ---------------------------------------------------------
         # 1. Parse search request
