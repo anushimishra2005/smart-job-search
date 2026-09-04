@@ -534,6 +534,23 @@
                 max-width: 100%;
             }
         }
+        .why-match-section {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .why-match-list {
+            margin: 10px 0 0 0;
+            padding-left: 22px;
+            color: #475569;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .why-match-list li {
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 <body>
@@ -995,8 +1012,7 @@
                             </div>
                         `;
                     }
-
-                    let missingHTML = '';
+                                        let missingHTML = '';
 
                     if (missingSkills.length > 0) {
                         missingHTML = `
@@ -1010,6 +1026,27 @@
                                         ${escapeHtml(skill)}
                                     </span>
                                 `).join('')}
+                            </div>
+                        `;
+                    }
+                    let whyMatchHTML = '';
+
+                    const whyMatch = job.why_this_matches;
+
+                    if (whyMatch && whyMatch.reasons && whyMatch.reasons.length > 0) {
+                        whyMatchHTML = `
+                            <div class="why-match-section">
+                                <div class="skills-title">
+                                    💡 Why this match?
+                                </div>
+
+                                <ul class="why-match-list">
+                                    ${whyMatch.reasons.map(reason => `
+                                        <li>
+                                            ${escapeHtml(reason)}
+                                        </li>
+                                    `).join('')}
+                                </ul>
                             </div>
                         `;
                     }
@@ -1096,6 +1133,7 @@
 
                             ${matchedHTML}
                             ${missingHTML}
+                            ${whyMatchHTML}
                             ${job.match_reasons && job.match_reasons.length > 0 ? `
                                 <div class="skills-section">
                                     <div class="skills-title">
