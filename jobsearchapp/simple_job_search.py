@@ -609,6 +609,10 @@ class SimpleJobSearch:
                 "ghaziabad"
             }
 
+            # Delhi/NCR locations should be in India.
+            if "india" not in actual:
+                return False
+
             return any(
                 city in actual
                 for city in delhi_locations
